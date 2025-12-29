@@ -1,14 +1,14 @@
 name: background_location_transmitter
 description: "A production-grade Flutter plugin for background location tracking
   and server-side transmission using native foreground services."
-  
+
 version: 0.0.1
 
 repository: https://github.com/gowsikraja/background_location_transmitter
 
 environment:
   sdk: ^3.10.0
-  flutter: '>=3.3.0'
+  flutter: ">=3.3.0"
 
 dependencies:
   flutter:
@@ -24,4 +24,5 @@ flutter:
   plugin:
     platforms:
       android:
-        default_package: background_location_transmitter
+        package: com.example.background_location_transmitter
+        pluginClass: BackgroundLocationTransmitterPlugin

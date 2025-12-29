@@ -4,19 +4,19 @@
 /// metadata such as accuracy and speed.
 class LocationData {
   /// Latitude in degrees.
-  final double latitude;
+  final double? latitude;
 
   /// Longitude in degrees.
-  final double longitude;
+  final double? longitude;
 
   /// Speed in meters per second.
-  final double speed;
+  final double? speed;
 
   /// Estimated horizontal accuracy in meters.
-  final double accuracy;
+  final double? accuracy;
 
   /// Time at which the location was recorded.
-  final DateTime timestamp;
+  final DateTime? timestamp;
 
   LocationData({
     required this.latitude,

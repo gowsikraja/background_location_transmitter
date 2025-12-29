@@ -1,9 +1,27 @@
 package com.example.background_location_transmitter
 
+import android.Manifest
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.google.android.gms.location.*
+import android.os.Build
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.pm.PackageManager
+import android.os.Looper
+import androidx.annotation.RequiresPermission
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+
+import io.flutter.plugin.common.EventChannel
 
 /**
  * Foreground service responsible for background location tracking.
@@ -17,6 +35,10 @@ import com.google.android.gms.location.*
  * The service lifecycle is explicitly controlled via
  * start/stop commands from Flutter.
  */
+
+private const val CHANNEL_ID = "blt_location_channel"
+private const val NOTIFICATION_ID = 1001
+
 class LocationService : Service() {
 
     companion object {
@@ -29,14 +51,32 @@ class LocationService : Service() {
         var eventSink: EventChannel.EventSink? = null
     }
 
-    private lateinit var fusedClient: FusedLocationProviderClient
-    private lateinit var locationCallback: LocationCallback
+    private var fusedClient: FusedLocationProviderClient? = null
+    private var locationCallback: LocationCallback? = null
+
 
     override fun onCreate() {
         super.onCreate()
+        fusedClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // Initialize location client and foreground notification
-        // (implementation omitted for brevity)
+        createNotificationChannel()
+
+        startForeground(
+            NOTIFICATION_ID,
+            createNotification()
+        )
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        startLocationUpdates()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -46,7 +86,12 @@ class LocationService : Service() {
 
     override fun onDestroy() {
         // Stop receiving location updates and clear configuration
-        fusedClient.removeLocationUpdates(locationCallback)
+        fusedClient?.let { client ->
+            locationCallback?.let { callback ->
+                client.removeLocationUpdates(callback)
+            }
+        }
+        ServiceState.saveRunning(this, true)
         TrackingConfig.clear()
         super.onDestroy()
     }
@@ -60,7 +105,65 @@ class LocationService : Service() {
      * - Transmitted to the backend API (if configured)
      * - Forwarded to Flutter listeners (if active)
      */
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun startLocationUpdates() {
-        // Implementation omitted for brevity
+        val request = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            10_000L // 10 seconds
+        )
+            .setMinUpdateIntervalMillis(10_000L)
+            .build()
+
+        if (
+            ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            stopSelf()
+            return
+        }
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                val location = result.lastLocation ?: return
+
+                val data = mapOf(
+                    "latitude" to location.latitude,
+                    "longitude" to location.longitude,
+                    "speed" to location.speed,
+                    "timestamp" to System.currentTimeMillis()
+                )
+
+                eventSink?.success(data)
+            }
+        }
+
+        fusedClient?.requestLocationUpdates(
+            request,
+            locationCallback!!,
+            Looper.getMainLooper()
+        )
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Background Location Tracking",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun createNotification(): Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Location Tracking Active")
+            .setContentText("Tracking location in background")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setOngoing(true)
+            .build()
     }
 }

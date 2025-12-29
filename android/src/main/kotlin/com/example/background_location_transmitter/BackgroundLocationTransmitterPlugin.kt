@@ -1,6 +1,8 @@
 package com.example.background_location_transmitter
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -54,7 +56,68 @@ class BackgroundLocationTransmitterPlugin :
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         // Method calls are delegated to platform-specific handlers
-        // (implementation omitted here for brevity)
+        when (call.method) {
+
+            "checkPermission" -> {
+                val granted = PermissionUtils.checkAndRequestLocationPermission(context)
+                result.success(granted)
+            }
+
+            "isLocationEnabled" -> {
+                val locationManager =
+                    context.getSystemService(Context.LOCATION_SERVICE)
+                            as android.location.LocationManager
+
+                val enabled =
+                    locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
+                            locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
+
+                result.success(enabled)
+            }
+
+            "startTracking" -> {
+                val args = call.arguments as Map<*, *>
+
+                TrackingConfig.apiUrl = args["url"] as? String
+                TrackingConfig.headers =
+                    (args["headers"] as? Map<*, *>)
+                        ?.entries
+                        ?.associate { it.key.toString() to it.value.toString() }
+
+                TrackingConfig.baseBody =
+                    (args["body"] as? Map<*, *>)
+                        ?.entries
+                        ?.associate { it.key.toString() to it.value as Any }
+
+                if (!TrackingConfig.isValid()) {
+                    result.error("INVALID_CONFIG", "Tracking config is invalid", null)
+                    return
+                }
+
+                val intent = Intent(context, LocationService::class.java)
+                ContextCompat.startForegroundService(context, intent)
+
+                ServiceState.saveRunning(context, true)
+                result.success(null)
+            }
+
+            "stopTracking" -> {
+                context.stopService(Intent(context, LocationService::class.java))
+                TrackingConfig.clear()
+                ServiceState.saveRunning(context, false)
+                result.success(null)
+            }
+
+            "isTrackingRunning" -> {
+                result.success(ServiceState.isRunning(context))
+            }
+
+            "getCurrentLocation" -> {
+                LocationUtils.getCurrentLocation(context, result)
+            }
+
+            else -> result.notImplemented()
+        }
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
