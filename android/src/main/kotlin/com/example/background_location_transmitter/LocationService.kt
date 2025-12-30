@@ -58,6 +58,11 @@ class LocationService : Service() {
          * is not active and must always be accessed defensively.
          */
         var eventSink: EventChannel.EventSink? = null
+
+        /**
+         * Indicates whether the service is currently running.
+         */
+        var isServiceRunning: Boolean = false
     }
 
     private var fusedClient: FusedLocationProviderClient? = null
@@ -66,6 +71,7 @@ class LocationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isServiceRunning = true
         fusedClient = LocationServices.getFusedLocationProviderClient(this)
 
         createNotificationChannel()
@@ -104,7 +110,17 @@ class LocationService : Service() {
             }
         }
         executor.shutdown()
-        ServiceState.saveRunning(this, true)
+        ServiceState.saveRunning(this, true) 
+        // if I destroy it intentionally (via stopTracking), I should save FALSE.
+        // LocationService.onDestroy() is called when stopService() is called OR when system kills it.
+        // If stopService() is called, we usually manually set sharedPrefs = false in the Plugin code (stopTracking).
+        // If system kills it, onDestroy might be called.
+        // The original code had `ServiceState.saveRunning(this, true)`. This looks weird. Why true in onDestroy?
+        // Ah, maybe assuming if destroyed unexpectedly, we still want it "running" (true) so it restarts?
+        // But `stopTracking` in Plugin calls `ServiceState.saveRunning(context, false)`.
+        
+        // Let's stick to just updating the static flag here.
+        isServiceRunning = false
         TrackingConfig.clear()
         super.onDestroy()
     }

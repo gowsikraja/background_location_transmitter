@@ -122,8 +122,8 @@ class BackgroundLocationTransmitterPlugin :
             }
 
             "isTrackingRunning" -> {
-                val running = ServiceState.isRunning(context)
-                PluginLogger.logService("Checking if tracking is running: $running")
+                val running = LocationService.isServiceRunning
+                PluginLogger.logService("Checking if tracking is running: $running (Live Status)")
                 result.success(running)
             }
 
