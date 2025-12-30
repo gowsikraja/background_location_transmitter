@@ -96,6 +96,7 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
         'Content-Type': 'application/json',
       },
       body: {'userId': 'demo_user', 'sessionId': 'session_123'},
+      method: HttpMethod.post,
     );
 
     // Optional: Customize tracking behavior

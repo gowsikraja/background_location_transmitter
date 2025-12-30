@@ -1,3 +1,5 @@
+import 'package:background_location_transmitter/src/http_method.dart';
+
 /// Represents a single location snapshot.
 ///
 /// This model contains the geographic position along with
@@ -48,6 +50,11 @@ class LocationApiConfig {
   /// This must be a full, valid URL (e.g., https://api.example.com/location).
   final String url;
 
+  /// HTTP method to use for requests.
+  ///
+  /// Defaults to POST.
+  final HttpMethod method;
+
   /// HTTP headers to include in the request.
   ///
   /// Use this for authentication tokens or content type definitions.
@@ -64,6 +71,7 @@ class LocationApiConfig {
     required this.url,
     required this.headers,
     required this.body,
+    this.method = HttpMethod.post,
   });
 
   /// Converts this configuration into a map suitable for
@@ -72,5 +80,6 @@ class LocationApiConfig {
     'url': url,
     'headers': headers,
     'body': body,
+    'method': method.value,
   };
 }

@@ -96,6 +96,7 @@ class BackgroundLocationTransmitterPlugin :
 
                 TrackingConfig.debug = (args["debug"] as? Boolean) ?: true
                 TrackingConfig.interval = (args["interval"] as? Number)?.toLong() ?: 10000L
+                TrackingConfig.httpMethod = (args["method"] as? String) ?: "POST"
 
                 if (!TrackingConfig.isValid()) {
                     PluginLogger.logError("Tracking config is invalid: Missing required fields (URL, headers, or body)")
@@ -103,7 +104,7 @@ class BackgroundLocationTransmitterPlugin :
                     return
                 }
 
-                PluginLogger.logService("Starting LocationService with interval: ${TrackingConfig.interval}ms")
+                PluginLogger.logService("Starting LocationService with interval: ${TrackingConfig.interval}ms, method: ${TrackingConfig.httpMethod}")
                 val intent = Intent(context, LocationService::class.java)
                 ContextCompat.startForegroundService(context, intent)
 

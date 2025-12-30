@@ -23,6 +23,15 @@ import com.google.android.gms.location.Priority
 
 import io.flutter.plugin.common.EventChannel
 
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.util.concurrent.Executors
+import java.io.BufferedReader
+import java.io.InputStreamReader
+
+
 /**
  * Foreground service responsible for background location tracking.
  *
@@ -84,6 +93,9 @@ class LocationService : Service() {
         return START_STICKY
     }
 
+    // Executor for network operations to avoid blocking the main thread
+    private val executor = Executors.newSingleThreadExecutor()
+
     override fun onDestroy() {
         // Stop receiving location updates and clear configuration
         fusedClient?.let { client ->
@@ -91,6 +103,7 @@ class LocationService : Service() {
                 client.removeLocationUpdates(callback)
             }
         }
+        executor.shutdown()
         ServiceState.saveRunning(this, true)
         TrackingConfig.clear()
         super.onDestroy()
@@ -145,12 +158,14 @@ class LocationService : Service() {
                 if (eventSink != null) {
                     PluginLogger.logAction("Publishing location to Flutter stream")
                     eventSink?.success(data)
-                } else {
-                     PluginLogger.log("Flutter stream not active. Skipping UI update.")
                 }
 
-                // TODO: Transmit to Backend API
-                 PluginLogger.logAction("Transmitting location to backend: ${TrackingConfig.apiUrl}")
+                // Transmit to Backend API if configured
+                if (TrackingConfig.isValid()) {
+                    transmitLocation(data)
+                } else {
+                    PluginLogger.logError("Cannot transmit location: Invalid configuration")
+                }
             }
         }
 
@@ -160,6 +175,82 @@ class LocationService : Service() {
             locationCallback!!,
             Looper.getMainLooper()
         )
+    }
+
+    private fun transmitLocation(locationData: Map<String, Any>) {
+        executor.submit {
+            try {
+                val urlString = TrackingConfig.apiUrl ?: return@submit
+                val method = TrackingConfig.httpMethod
+                
+                val url = URL(urlString)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = method
+                connection.doOutput = true
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+
+                // Add Headers
+                val headers = TrackingConfig.headers
+                headers?.forEach { (key, value) ->
+                    connection.setRequestProperty(key, value)
+                }
+                connection.setRequestProperty("Content-Type", "application/json")
+
+                // Construct Body
+                val finalBodyMap = TrackingConfig.baseBody?.toMutableMap() ?: mutableMapOf()
+                finalBodyMap.putAll(locationData)
+                val jsonBody = JSONObject(finalBodyMap).toString()
+
+                // Log Request Details
+                PluginLogger.logAction(
+                    """
+                    ⚡ Transmitting Location Request:
+                    URL: $urlString
+                    Method: $method
+                    Headers: $headers
+                    Body: $jsonBody
+                    """.trimIndent()
+                )
+
+                // Write body
+                OutputStreamWriter(connection.outputStream).use { writer ->
+                    writer.write(jsonBody)
+                    writer.flush()
+                }
+
+                val responseCode = connection.responseCode
+                val responseBody = try {
+                    val stream = if (responseCode in 200..299) connection.inputStream else connection.errorStream
+                    stream?.bufferedReader()?.use { it.readText() } ?: ""
+                } catch (e: Exception) {
+                    "Unable to read response body: ${e.message}"
+                }
+
+                if (responseCode in 200..299) {
+                    PluginLogger.logAction(
+                        """
+                        ✅ Server Response:
+                        Code: $responseCode
+                        Body: $responseBody
+                        """.trimIndent()
+                    )
+                } else {
+                    PluginLogger.logError(
+                        """
+                        ⚠️ Server Error:
+                        Code: $responseCode
+                        Body: $responseBody
+                        """.trimIndent()
+                    )
+                }
+                
+                connection.disconnect()
+
+            } catch (e: Exception) {
+                PluginLogger.logError("❌ Transmission failed", e)
+            }
+        }
     }
 
     private fun createNotificationChannel() {

@@ -1,10 +1,10 @@
 import 'package:background_location_transmitter/background_location_transmitter.dart';
 
 import 'src/method_channel_impl.dart';
-import 'src/models.dart';
 
 export 'src/models.dart';
 export 'src/tracking_config.dart';
+export 'src/http_method.dart';
 
 /// Provides background location tracking and transmission capabilities.
 ///

@@ -26,6 +26,9 @@ object TrackingConfig {
     /** Location update interval in milliseconds */
     var interval: Long = 10000
 
+    /** HTTP method for API requests (POST, PUT, PATCH) */
+    var httpMethod: String = "POST"
+
     /**
      * Returns `true` if all required configuration fields
      * are available and valid.
@@ -46,5 +49,6 @@ object TrackingConfig {
         baseBody = null
         debug = true
         interval = 10000
+        httpMethod = "POST"
     }
 }
