@@ -1,0 +1,53 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  flutter_plugin_checks:
+    name: Flutter Plugin Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Flutter
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "stable"
+          cache: true
+
+      # 3️⃣ Flutter version info (debug aid)
+      - name: Flutter version
+        run: flutter --version
+
+      # 4️⃣ Get dependencies (plugin root)
+      - name: Install dependencies (plugin)
+        run: flutter pub get
+
+      # 5️⃣ Dart format check (lib/)
+      - name: Dart format check (lib)
+        run: dart format --set-exit-if-changed lib/
+
+      # 6️⃣ Flutter analyze (plugin)
+      - name: Flutter analyze
+        run: flutter analyze
+
+      # 7️⃣ Get dependencies (example app)
+      - name: Install dependencies (example)
+        working-directory: example
+        run: flutter pub get
+
+      # 8️⃣ Dart format check (example/lib)
+      - name: Dart format check (example/lib)
+        working-directory: example
+        run: dart format --set-exit-if-changed lib/
+
+      # 9️⃣ Build example app (Android debug)
+      - name: Build example app (Android)
+        working-directory: example
+        run: flutter build apk --debug
