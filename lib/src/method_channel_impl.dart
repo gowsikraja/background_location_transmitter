@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'models.dart';
+import 'tracking_config.dart';
 
 /// Internal platform communication layer for
 /// `background_location_transmitter`.
@@ -37,12 +38,22 @@ class MethodChannelImpl {
   Future<bool> isLocationEnabled() async =>
       await _methodChannel.invokeMethod<bool>('isLocationEnabled') ?? false;
 
-  /// Starts background location tracking using the provided [config].
+  /// Starts background location tracking using the provided [config]
+  /// and [trackingConfig].
   ///
-  /// The configuration is forwarded to the native platform,
-  /// where it is stored and used for location transmission.
-  Future<void> startTracking(LocationApiConfig config) async =>
-      await _methodChannel.invokeMethod('startTracking', config.toMap());
+  /// The configuration is merged and forwarded to the native platform,
+  /// where it is stored and used for location transmission and service
+  /// behavior.
+  Future<void> startTracking(
+    LocationApiConfig config,
+    TrackingConfig trackingConfig,
+  ) async {
+    final Map<String, dynamic> arguments = {
+      ...config.toMap(),
+      ...trackingConfig.toMap(),
+    };
+    await _methodChannel.invokeMethod('startTracking', arguments);
+  }
 
   /// Stops background location tracking and transmission.
   Future<void> stopTracking() async =>

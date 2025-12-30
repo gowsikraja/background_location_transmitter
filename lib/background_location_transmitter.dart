@@ -1,7 +1,10 @@
+import 'package:background_location_transmitter/background_location_transmitter.dart';
+
 import 'src/method_channel_impl.dart';
 import 'src/models.dart';
 
 export 'src/models.dart';
+export 'src/tracking_config.dart';
 
 /// Provides background location tracking and transmission capabilities.
 ///
@@ -41,10 +44,22 @@ class BackgroundLocationTransmitter {
   /// to the backend service. The native service automatically
   /// appends location information to the request payload.
   ///
+  /// The optional [trackingConfig] allows customizing behavior
+  /// such as debug logging and update intervals.
+  ///
   /// Calling this method multiple times has no effect if the
   /// service is already running.
-  Future<void> startTracking(LocationApiConfig config) =>
-      _platform.startTracking(config);
+  Future<void> startTracking(
+    LocationApiConfig config, {
+    TrackingConfig trackingConfig = const TrackingConfig(),
+  }) {
+    if (trackingConfig.locationUpdateInterval < const Duration(seconds: 5)) {
+      throw ArgumentError(
+        'Location update interval must be at least 5 seconds',
+      );
+    }
+    return _platform.startTracking(config, trackingConfig);
+  }
 
   /// Stops background location tracking and transmission.
   ///

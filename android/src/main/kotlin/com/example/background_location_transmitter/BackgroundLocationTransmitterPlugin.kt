@@ -59,11 +59,14 @@ class BackgroundLocationTransmitterPlugin :
         when (call.method) {
 
             "checkPermission" -> {
+                PluginLogger.logPermission("Checking location permissions...")
                 val granted = PermissionUtils.checkAndRequestLocationPermission(context)
+                PluginLogger.logPermission("Permission granted: $granted")
                 result.success(granted)
             }
 
             "isLocationEnabled" -> {
+                PluginLogger.logAction("Checking if location services are enabled...")
                 val locationManager =
                     context.getSystemService(Context.LOCATION_SERVICE)
                             as android.location.LocationManager
@@ -72,10 +75,12 @@ class BackgroundLocationTransmitterPlugin :
                     locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
                             locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
 
+                PluginLogger.logAction("Location services enabled: $enabled")
                 result.success(enabled)
             }
 
             "startTracking" -> {
+                PluginLogger.logService("Request to start tracking received")
                 val args = call.arguments as Map<*, *>
 
                 TrackingConfig.apiUrl = args["url"] as? String
@@ -89,11 +94,16 @@ class BackgroundLocationTransmitterPlugin :
                         ?.entries
                         ?.associate { it.key.toString() to it.value as Any }
 
+                TrackingConfig.debug = (args["debug"] as? Boolean) ?: true
+                TrackingConfig.interval = (args["interval"] as? Number)?.toLong() ?: 10000L
+
                 if (!TrackingConfig.isValid()) {
+                    PluginLogger.logError("Tracking config is invalid: Missing required fields (URL, headers, or body)")
                     result.error("INVALID_CONFIG", "Tracking config is invalid", null)
                     return
                 }
 
+                PluginLogger.logService("Starting LocationService with interval: ${TrackingConfig.interval}ms")
                 val intent = Intent(context, LocationService::class.java)
                 ContextCompat.startForegroundService(context, intent)
 
@@ -102,17 +112,22 @@ class BackgroundLocationTransmitterPlugin :
             }
 
             "stopTracking" -> {
+                PluginLogger.logService("Request to stop tracking received")
                 context.stopService(Intent(context, LocationService::class.java))
                 TrackingConfig.clear()
                 ServiceState.saveRunning(context, false)
+                PluginLogger.logService("LocationService stopped")
                 result.success(null)
             }
 
             "isTrackingRunning" -> {
-                result.success(ServiceState.isRunning(context))
+                val running = ServiceState.isRunning(context)
+                PluginLogger.logService("Checking if tracking is running: $running")
+                result.success(running)
             }
 
             "getCurrentLocation" -> {
+                PluginLogger.logAction("Requesting one-time location update...")
                 LocationUtils.getCurrentLocation(context, result)
             }
 
@@ -122,11 +137,13 @@ class BackgroundLocationTransmitterPlugin :
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
         // Attach Flutter listener to native service
+        PluginLogger.logAction("Flutter execution listening for location updates")
         LocationService.eventSink = events
     }
 
     override fun onCancel(arguments: Any?) {
         // Detach Flutter listener when no longer needed
+        PluginLogger.logAction("Flutter execution stopped listening")
         LocationService.eventSink = null
     }
 }

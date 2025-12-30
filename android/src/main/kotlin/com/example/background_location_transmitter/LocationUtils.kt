@@ -36,6 +36,7 @@ object LocationUtils {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            PluginLogger.logError("Cannot fetch location: Permission denied")
             result.error(
                 "PERMISSION_DENIED",
                 "Location permission not granted",
@@ -47,12 +48,14 @@ object LocationUtils {
         val fusedClient =
             LocationServices.getFusedLocationProviderClient(context)
 
+        PluginLogger.logAction("Fetching high-accuracy location...")
         fusedClient.getCurrentLocation(
             Priority.PRIORITY_HIGH_ACCURACY,
             null
         ).addOnSuccessListener { location ->
 
             if (location != null) {
+                PluginLogger.logLocation("One-time location fetched: ${location.latitude}, ${location.longitude}")
                 result.success(
                     mapOf(
                         "latitude" to location.latitude,
@@ -64,8 +67,10 @@ object LocationUtils {
                 )
             } else {
                 // Fallback to last known location
+                PluginLogger.log("High-accuracy location null. Trying last known location...")
                 fusedClient.lastLocation.addOnSuccessListener { lastLocation ->
                     if (lastLocation != null) {
+                        PluginLogger.logLocation("Last known location found: ${lastLocation.latitude}, ${lastLocation.longitude}")
                         result.success(
                             mapOf(
                                 "latitude" to lastLocation.latitude,
@@ -76,6 +81,7 @@ object LocationUtils {
                             )
                         )
                     } else {
+                        PluginLogger.logError("Unable to retrieve any location.")
                         result.error(
                             "NO_LOCATION",
                             "Unable to retrieve current location",
@@ -85,6 +91,7 @@ object LocationUtils {
                 }
             }
         }.addOnFailureListener {
+            PluginLogger.logError("Location fetch failed", it)
             result.error(
                 "LOCATION_ERROR",
                 it.message,

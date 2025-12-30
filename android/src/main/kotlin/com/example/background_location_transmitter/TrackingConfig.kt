@@ -20,6 +20,12 @@ object TrackingConfig {
     /** Base payload shared across all location updates */
     var baseBody: Map<String, Any>? = null
 
+    /** Enable/disable debug logging */
+    var debug: Boolean = true
+
+    /** Location update interval in milliseconds */
+    var interval: Long = 10000
+
     /**
      * Returns `true` if all required configuration fields
      * are available and valid.
@@ -38,5 +44,7 @@ object TrackingConfig {
         apiUrl = null
         headers = null
         baseBody = null
+        debug = true
+        interval = 10000
     }
 }

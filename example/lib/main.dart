@@ -36,7 +36,6 @@ class ExampleHomePage extends StatefulWidget {
 class _ExampleHomePageState extends State<ExampleHomePage> {
   final _plugin = BackgroundLocationTransmitter.instance;
 
-
   LocationData? _latestLocation;
   bool _trackingRunning = false;
   bool _loading = false;
@@ -99,7 +98,13 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
       body: {'userId': 'demo_user', 'sessionId': 'session_123'},
     );
 
-    await _plugin.startTracking(config);
+    // Optional: Customize tracking behavior
+    final trackingConfig = TrackingConfig(
+      debug: true,
+      locationUpdateInterval: const Duration(seconds: 10),
+    );
+
+    await _plugin.startTracking(config, trackingConfig: trackingConfig);
     _listenToLocationStream();
 
     setState(() {

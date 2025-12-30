@@ -107,11 +107,14 @@ class LocationService : Service() {
      */
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun startLocationUpdates() {
+        val interval = TrackingConfig.interval
+        PluginLogger.logService("Configuring location request with interval: ${interval}ms")
+
         val request = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
-            10_000L // 10 seconds
+            interval
         )
-            .setMinUpdateIntervalMillis(10_000L)
+            .setMinUpdateIntervalMillis(interval)
             .build()
 
         if (
@@ -120,6 +123,7 @@ class LocationService : Service() {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
+            PluginLogger.logError("Missing FINE_LOCATION permission. Stopping service.")
             stopSelf()
             return
         }
@@ -127,18 +131,30 @@ class LocationService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation ?: return
+                PluginLogger.logLocation("New location received: ${location.latitude}, ${location.longitude} (Accuracy: ${location.accuracy}m)")
 
                 val data = mapOf(
                     "latitude" to location.latitude,
                     "longitude" to location.longitude,
                     "speed" to location.speed,
+                    "accuracy" to location.accuracy,
                     "timestamp" to System.currentTimeMillis()
                 )
 
-                eventSink?.success(data)
+                // Transmit to Flutter
+                if (eventSink != null) {
+                    PluginLogger.logAction("Publishing location to Flutter stream")
+                    eventSink?.success(data)
+                } else {
+                     PluginLogger.log("Flutter stream not active. Skipping UI update.")
+                }
+
+                // TODO: Transmit to Backend API
+                 PluginLogger.logAction("Transmitting location to backend: ${TrackingConfig.apiUrl}")
             }
         }
 
+        PluginLogger.logService("Requesting location updates from FusedLocationProvider")
         fusedClient?.requestLocationUpdates(
             request,
             locationCallback!!,

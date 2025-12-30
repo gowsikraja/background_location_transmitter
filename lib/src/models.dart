@@ -44,14 +44,20 @@ class LocationData {
 /// network requests when sending location updates.
 class LocationApiConfig {
   /// Target API endpoint URL.
+  ///
+  /// This must be a full, valid URL (e.g., https://api.example.com/location).
   final String url;
 
   /// HTTP headers to include in the request.
+  ///
+  /// Use this for authentication tokens or content type definitions.
   final Map<String, String> headers;
 
   /// Base request payload.
   ///
-  /// Location data is automatically appended by the platform.
+  /// Key-value pairs here will be sent with every request.
+  /// Location data is automatically appended by the platform
+  /// to this base body.
   final Map<String, dynamic> body;
 
   LocationApiConfig({
