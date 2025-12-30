@@ -1,0 +1,19 @@
+# Enable automatic code reviews & summaries
+code_review:
+  summary: true
+  code_review: true
+
+# Ignore certain files or patterns
+# ignore_patterns:
+#   - "docs/**"
+#   - "scripts/**"
+
+# Only review open pull requests
+pull_request_opened:
+  help: false
+  summary: true
+  code_review: true
+
+# Overall feature flags
+memory_config:
+  disabled: false
