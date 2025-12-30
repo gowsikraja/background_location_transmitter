@@ -18,8 +18,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "stable"
-          cache: true
+          channel: beta
 
       # 3️⃣ Flutter version info (debug aid)
       - name: Flutter version
