@@ -138,10 +138,11 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
     });
   }
 
+  /// Displays a message using a SnackBar.
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
