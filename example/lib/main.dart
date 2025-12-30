@@ -59,7 +59,6 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
     if (running) {
       _listenToLocationStream();
     }
-    return true;
   }
 
   /// Starts listening to live location updates.
