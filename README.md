@@ -52,7 +52,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  background_location_transmitter: ^0.0.1
+  background_location_transmitter: <latest_version>
 ```
 
 ## ⚙️ Android Setup
