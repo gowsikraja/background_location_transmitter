@@ -193,11 +193,67 @@ class LocationService : Service() {
         )
     }
 
+    private fun replacePlaceholders(template: String, data: Map<String, Any>): String {
+        var result = template
+        result = result.replace("%latitude%", data["latitude"].toString())
+        result = result.replace("%longitude%", data["longitude"].toString())
+        result = result.replace("%speed%", data["speed"].toString())
+        result = result.replace("%accuracy%", data["accuracy"].toString())
+        result = result.replace("%timestamp%", data["timestamp"].toString())
+        return result
+    }
+
+    private fun processBody(baseBody: Map<String, Any>?, locationData: Map<String, Any>, urlHasPlaceholders: Boolean): Map<String, Any> {
+        val finalBody = mutableMapOf<String, Any>()
+        if (baseBody == null) {
+            // If URL has placeholders, assume data is sent via Query Params.
+            // Do NOT auto-append generic location fields in this case.
+            if (urlHasPlaceholders) {
+                return finalBody
+            }
+            // Legacy Mode: No body, no URL placeholders -> Auto-append location data
+            finalBody.putAll(locationData)
+            return finalBody
+        }
+
+        // Check if any value in baseBody is a string containing a placeholder
+        val hasPlaceholders = baseBody.values.any { value ->
+            value is String && (
+                value.contains("%latitude%") ||
+                value.contains("%longitude%") ||
+                value.contains("%speed%") ||
+                value.contains("%accuracy%") ||
+                value.contains("%timestamp%")
+            )
+        }
+
+        if (hasPlaceholders) {
+            // Dynamic Mode: Replace placeholders
+            baseBody.forEach { (key, value) ->
+                if (value is String) {
+                    finalBody[key] = replacePlaceholders(value, locationData)
+                } else {
+                    finalBody[key] = value
+                }
+            }
+            // Do NOT auto-append generic location fields
+        } else {
+            // Legacy Mode: Append generic location fields
+            finalBody.putAll(baseBody)
+            finalBody.putAll(locationData)
+        }
+        return finalBody
+    }
+
     private fun transmitLocation(locationData: Map<String, Any>) {
         executor.submit {
             try {
-                val urlString = TrackingConfig.apiUrl ?: return@submit
+                val rawUrl = TrackingConfig.apiUrl ?: return@submit
                 val method = TrackingConfig.httpMethod
+                
+                // Process URL
+                val urlString = replacePlaceholders(rawUrl, locationData)
+                val urlHasPlaceholders = (rawUrl != urlString)
                 
                 val url = URL(urlString)
                 val connection = url.openConnection() as HttpURLConnection
@@ -213,9 +269,8 @@ class LocationService : Service() {
                 }
                 connection.setRequestProperty("Content-Type", "application/json")
 
-                // Construct Body
-                val finalBodyMap = TrackingConfig.baseBody?.toMutableMap() ?: mutableMapOf()
-                finalBodyMap.putAll(locationData)
+                // Process Body
+                val finalBodyMap = processBody(TrackingConfig.baseBody, locationData, urlHasPlaceholders)
                 val jsonBody = JSONObject(finalBodyMap).toString()
 
                 // Log Request Details

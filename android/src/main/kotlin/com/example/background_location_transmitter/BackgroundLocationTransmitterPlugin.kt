@@ -99,7 +99,7 @@ class BackgroundLocationTransmitterPlugin :
                 TrackingConfig.httpMethod = (args["method"] as? String) ?: "POST"
 
                 if (!TrackingConfig.isValid()) {
-                    PluginLogger.logError("Tracking config is invalid: Missing required fields (URL, headers, or body)")
+                    PluginLogger.logError("Tracking config is invalid: Missing required fields (URL or headers)")
                     result.error("INVALID_CONFIG", "Tracking config is invalid", null)
                     return
                 }

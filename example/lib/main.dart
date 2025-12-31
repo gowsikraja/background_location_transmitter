@@ -88,6 +88,16 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
       return;
     }
 
+    //Example for PUT API configuration
+    // final putConfig = LocationApiConfig(
+    //   url: 'https://example.com/api/location?lat=%latitude%&lng=%longitude%&speed=%speed%&accuracy=%accuracy%&ts=%timestamp%',
+    //   method: HttpMethod.put,
+    //   headers: {
+    //     'Authorization': 'Bearer DEMO_TOKEN',
+    //     'Content-Type': 'application/json',
+    //   },);
+
+
     // Example API configuration
     final config = LocationApiConfig(
       url: 'https://example.com/api/location',
@@ -95,7 +105,15 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
         'Authorization': 'Bearer DEMO_TOKEN',
         'Content-Type': 'application/json',
       },
-      body: {'userId': 'demo_user', 'sessionId': 'session_123'},
+      body: {
+        'userId': 'demo_user',
+        'sessionId': 'session_123',
+        'latitude': '%latitude%',
+        'longitude': '%longitude%',
+        'speed': '%speed%',
+        'accuracy': '%accuracy%',
+        'timestamp': '%timestamp%',
+      },
       method: HttpMethod.post,
     );
 
