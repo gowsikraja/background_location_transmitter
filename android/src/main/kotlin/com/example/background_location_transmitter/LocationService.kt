@@ -231,7 +231,7 @@ class LocationService : Service() {
         if (hasPlaceholdersRecursive(baseBody, locationData.keys)) {
             // Dynamic Mode: Recursively replace placeholders.
             @Suppress("UNCHECKED_CAST")
-            return replacePlaceholdersRecursive(baseBody, locationData) as Map<String, Any>
+            return (replacePlaceholdersRecursive(baseBody, locationData) as? Map<String, Any>) ?: emptyMap()
         } else {
             // Legacy Mode: Append generic location fields.
             return mutableMapOf<String, Any>().apply {
