@@ -34,7 +34,7 @@ object TrackingConfig {
      * are available and valid.
      */
     fun isValid(): Boolean {
-        return apiUrl != null && headers != null && baseBody != null
+        return apiUrl != null && headers != null
     }
 
     /**

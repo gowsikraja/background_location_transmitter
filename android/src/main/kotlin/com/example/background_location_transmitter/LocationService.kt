@@ -193,11 +193,63 @@ class LocationService : Service() {
         )
     }
 
+    private fun replacePlaceholders(template: String, data: Map<String, Any>): String {
+        if (data.isEmpty()) return template
+
+        val regex = Regex("%(${data.keys.joinToString("|")})%")
+        return regex.replace(template) { matchResult ->
+            val key = matchResult.groupValues[1]
+            data[key]?.toString() ?: matchResult.value
+        }
+    }
+
+    private fun hasPlaceholdersRecursive(data: Any?, locationKeys: Set<String>): Boolean {
+        return when (data) {
+            is String -> locationKeys.any { data.contains("%$it%") }
+            is Map<*, *> -> data.values.any { hasPlaceholdersRecursive(it, locationKeys) }
+            is List<*> -> data.any { hasPlaceholdersRecursive(it, locationKeys) }
+            else -> false
+        }
+    }
+
+    private fun replacePlaceholdersRecursive(data: Any?, locationData: Map<String, Any>): Any? {
+        return when (data) {
+            is String -> replacePlaceholders(data, locationData)
+            is Map<*, *> -> data.entries.associate { (key, value) -> key.toString() to replacePlaceholdersRecursive(value, locationData) }
+            is List<*> -> data.map { replacePlaceholdersRecursive(it, locationData) }
+            else -> data
+        }
+    }
+
+    private fun processBody(baseBody: Map<String, Any>?, locationData: Map<String, Any>, urlHasPlaceholders: Boolean): Map<String, Any> {
+        if (baseBody == null) {
+            // If URL has placeholders, data is sent via query params; return an empty body.
+            // Otherwise, in legacy mode, use the location data as the body.
+            return if (urlHasPlaceholders) emptyMap() else locationData
+        }
+
+        if (hasPlaceholdersRecursive(baseBody, locationData.keys)) {
+            // Dynamic Mode: Recursively replace placeholders.
+            @Suppress("UNCHECKED_CAST")
+            return (replacePlaceholdersRecursive(baseBody, locationData) as? Map<String, Any>) ?: emptyMap()
+        } else {
+            // Legacy Mode: Append generic location fields.
+            return mutableMapOf<String, Any>().apply {
+                putAll(baseBody)
+                putAll(locationData)
+            }
+        }
+    }
+
     private fun transmitLocation(locationData: Map<String, Any>) {
         executor.submit {
             try {
-                val urlString = TrackingConfig.apiUrl ?: return@submit
+                val rawUrl = TrackingConfig.apiUrl ?: return@submit
                 val method = TrackingConfig.httpMethod
+                
+                // Process URL
+                val urlString = replacePlaceholders(rawUrl, locationData)
+                val urlHasPlaceholders = (rawUrl != urlString)
                 
                 val url = URL(urlString)
                 val connection = url.openConnection() as HttpURLConnection
@@ -213,9 +265,8 @@ class LocationService : Service() {
                 }
                 connection.setRequestProperty("Content-Type", "application/json")
 
-                // Construct Body
-                val finalBodyMap = TrackingConfig.baseBody?.toMutableMap() ?: mutableMapOf()
-                finalBodyMap.putAll(locationData)
+                // Process Body
+                val finalBodyMap = processBody(TrackingConfig.baseBody, locationData, urlHasPlaceholders)
                 val jsonBody = JSONObject(finalBodyMap).toString()
 
                 // Log Request Details

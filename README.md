@@ -55,6 +55,80 @@ dependencies:
   background_location_transmitter: <latest_version>
 ```
 
+## 🚀 Usage
+
+### 1️⃣ Configure & Start Tracking
+Call `startTracking` with your API configuration. You can specify the HTTP method, headers, and body.
+
+```dart
+import 'package:background_location_transmitter/background_location_transmitter.dart';
+
+await BackgroundLocationTransmitter.instance.startTracking(
+  LocationApiConfig(
+    url: 'https://api.example.com/v1/update_location',
+    method: HttpMethod.post, // Supported: POST, PUT, PATCH
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+      'Content-Type': 'application/json',
+    },
+    body: {
+      'user_id': 'user_123',
+      'device_id': 'android_x',
+      // Location fields are auto-appended if no placeholders are used
+    },
+  ),
+  trackingConfig: const TrackingConfig(
+    debug: true, // Enable debug logs
+    locationUpdateInterval: Duration(seconds: 10),
+  ),
+);
+```
+
+### ⚡ Dynamic Requests & Customization
+The plugin supports **dynamic placeholders** for granular control over your API request format. You can use these placeholders in both the **URL** and the **Body**.
+
+**Supported Placeholders:**
+- `%latitude%`
+- `%longitude%`
+- `%speed%`
+- `%accuracy%`
+- `%timestamp%`
+
+#### Scenario A: Custom Body Structure
+Use placeholders to define your own JSON schema. If placeholders are detected in the body, the plugin **disables auto-appending** and sends exactly what you define.
+
+```dart
+LocationApiConfig(
+  url: 'https://api.example.com/driver/location',
+  method: HttpMethod.put,
+  body: {
+    'driverId': 'D-101',
+    'coordinates': {
+      'lat': '%latitude%',
+      'lng': '%longitude%'
+    },
+    'meta': {
+      'speed_mps': '%speed%',
+      'accuracy_m': '%accuracy%'
+    }
+  },
+);
+// Result Payload: {"driverId": "...", "coordinates": {"lat": "...", "lng": "..."}, ...}
+```
+
+#### Scenario B: Query Parameters Only (No Body)
+If you prefer sending data via URL parameters, use placeholders in the URL and **omit the body**.
+
+```dart
+LocationApiConfig(
+  url: 'https://api.example.com/update?lat=%latitude%&lng=%longitude%',
+  method: HttpMethod.put,
+  // body is null/omitted
+);
+// Result Request: PUT https://api.example.com/update?lat=12.34&lng=56.78
+// Body: {}
+```
+
 ## ⚙️ Android Setup
 ### 1️⃣ Permissions
 Add the following permissions to your app’s AndroidManifest.xml:

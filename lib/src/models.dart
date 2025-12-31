@@ -60,17 +60,44 @@ class LocationApiConfig {
   /// Use this for authentication tokens or content type definitions.
   final Map<String, String> headers;
 
-  /// Base request payload.
+  /// The HTTP request body.
   ///
-  /// Key-value pairs here will be sent with every request.
-  /// Location data is automatically appended by the platform
-  /// to this base body.
-  final Map<String, dynamic> body;
+  /// This map corresponds to the JSON payload sent to the server.
+  /// The plugin automatically appends the following location fields
+  /// to this map at runtime:
+  /// - `latitude` (double)
+  /// - `longitude` (double)
+  /// - `speed` (double)
+  /// - `accuracy` (double)
+  /// - `timestamp` (int, milliseconds since epoch)
+  ///
+  /// **Dynamic Placeholders**:
+  /// You can customize the request structure by using the following
+  /// placeholders in your [url] or [body] values. If placeholders
+  /// are detected in the [body], the auto-append behavior is disabled,
+  /// giving you full control over the payload schema.
+  /// - `%latitude%`
+  /// - `%longitude%`
+  /// - `%speed%`
+  /// - `%accuracy%`
+  /// - `%timestamp%`
+  ///
+  /// Example:
+  /// ```dart
+  /// body: {
+  ///   'user_id': '123',
+  ///   'loc': {
+  ///     'lat': '%latitude%',
+  ///     'lng': '%longitude%'
+  ///   }
+  /// }
+  /// ```
+  final Map<String, dynamic>? body;
 
   LocationApiConfig({
     required this.url,
     required this.headers,
-    required this.body,
+    this.body,
     this.method = HttpMethod.post,
   });
 
