@@ -194,18 +194,20 @@ class LocationService : Service() {
     }
 
     private fun replacePlaceholders(template: String, data: Map<String, Any>): String {
-        return data.entries.fold(template) { acc, entry ->
-            acc.replace("%${entry.key}%", entry.value.toString())
+        if (data.isEmpty()) return template
+
+        val regex = Regex("%(${data.keys.joinToString("|")})%")
+        return regex.replace(template) { matchResult ->
+            val key = matchResult.groupValues[1]
+            data[key]?.toString() ?: matchResult.value
         }
     }
 
-    private val PLACEHOLDERS = listOf("%latitude%", "%longitude%", "%speed%", "%accuracy%", "%timestamp%")
-
-    private fun hasPlaceholdersRecursive(data: Any?): Boolean {
+    private fun hasPlaceholdersRecursive(data: Any?, locationKeys: Set<String>): Boolean {
         return when (data) {
-            is String -> PLACEHOLDERS.any { data.contains(it) }
-            is Map<*, *> -> data.values.any { hasPlaceholdersRecursive(it) }
-            is List<*> -> data.any { hasPlaceholdersRecursive(it) }
+            is String -> locationKeys.any { data.contains("%$it%") }
+            is Map<*, *> -> data.values.any { hasPlaceholdersRecursive(it, locationKeys) }
+            is List<*> -> data.any { hasPlaceholdersRecursive(it, locationKeys) }
             else -> false
         }
     }
@@ -213,7 +215,7 @@ class LocationService : Service() {
     private fun replacePlaceholdersRecursive(data: Any?, locationData: Map<String, Any>): Any? {
         return when (data) {
             is String -> replacePlaceholders(data, locationData)
-            is Map<*, *> -> (data as Map<String, Any>).mapValues { replacePlaceholdersRecursive(it.value, locationData) }
+            is Map<*, *> -> data.mapKeys { it.key.toString() }.mapValues { replacePlaceholdersRecursive(it.value, locationData) }
             is List<*> -> data.map { replacePlaceholdersRecursive(it, locationData) }
             else -> data
         }
@@ -226,7 +228,7 @@ class LocationService : Service() {
             return if (urlHasPlaceholders) emptyMap() else locationData
         }
 
-        if (hasPlaceholdersRecursive(baseBody)) {
+        if (hasPlaceholdersRecursive(baseBody, locationData.keys)) {
             // Dynamic Mode: Recursively replace placeholders.
             @Suppress("UNCHECKED_CAST")
             return replacePlaceholdersRecursive(baseBody, locationData) as Map<String, Any>
