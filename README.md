@@ -124,7 +124,7 @@ LocationApiConfig(
   url: 'https://api.example.com/update?lat=%latitude%&lng=%longitude%',
   method: HttpMethod.put,
   // body is null/omitted
-)
+);
 // Result Request: PUT https://api.example.com/update?lat=12.34&lng=56.78
 // Body: {}
 ```
