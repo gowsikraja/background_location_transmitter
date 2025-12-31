@@ -97,7 +97,6 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
     //     'Content-Type': 'application/json',
     //   },);
 
-
     // Example API configuration
     final config = LocationApiConfig(
       url: 'https://example.com/api/location',
@@ -110,9 +109,11 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
         'sessionId': 'session_123',
         'latitude': '%latitude%',
         'longitude': '%longitude%',
-        'speed': '%speed%',
-        'accuracy': '%accuracy%',
-        'timestamp': '%timestamp%',
+        'metadata': {
+          'speed': '%speed%',
+          'accuracy': '%accuracy%',
+          'timestamp': '%timestamp%'
+        },
       },
       method: HttpMethod.post,
     );

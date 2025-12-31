@@ -203,46 +203,44 @@ class LocationService : Service() {
         return result
     }
 
+    private val PLACEHOLDERS = listOf("%latitude%", "%longitude%", "%speed%", "%accuracy%", "%timestamp%")
+
+    private fun hasPlaceholdersRecursive(data: Any?): Boolean {
+        return when (data) {
+            is String -> PLACEHOLDERS.any { data.contains(it) }
+            is Map<*, *> -> data.values.any { hasPlaceholdersRecursive(it) }
+            is List<*> -> data.any { hasPlaceholdersRecursive(it) }
+            else -> false
+        }
+    }
+
+    private fun replacePlaceholdersRecursive(data: Any?, locationData: Map<String, Any>): Any? {
+        return when (data) {
+            is String -> replacePlaceholders(data, locationData)
+            is Map<*, *> -> (data as Map<String, Any>).mapValues { replacePlaceholdersRecursive(it.value, locationData) }
+            is List<*> -> data.map { replacePlaceholdersRecursive(it, locationData) }
+            else -> data
+        }
+    }
+
     private fun processBody(baseBody: Map<String, Any>?, locationData: Map<String, Any>, urlHasPlaceholders: Boolean): Map<String, Any> {
-        val finalBody = mutableMapOf<String, Any>()
         if (baseBody == null) {
-            // If URL has placeholders, assume data is sent via Query Params.
-            // Do NOT auto-append generic location fields in this case.
-            if (urlHasPlaceholders) {
-                return finalBody
-            }
-            // Legacy Mode: No body, no URL placeholders -> Auto-append location data
-            finalBody.putAll(locationData)
-            return finalBody
+            // If URL has placeholders, data is sent via query params; return an empty body.
+            // Otherwise, in legacy mode, use the location data as the body.
+            return if (urlHasPlaceholders) emptyMap() else locationData
         }
 
-        // Check if any value in baseBody is a string containing a placeholder
-        val hasPlaceholders = baseBody.values.any { value ->
-            value is String && (
-                value.contains("%latitude%") ||
-                value.contains("%longitude%") ||
-                value.contains("%speed%") ||
-                value.contains("%accuracy%") ||
-                value.contains("%timestamp%")
-            )
-        }
-
-        if (hasPlaceholders) {
-            // Dynamic Mode: Replace placeholders
-            baseBody.forEach { (key, value) ->
-                if (value is String) {
-                    finalBody[key] = replacePlaceholders(value, locationData)
-                } else {
-                    finalBody[key] = value
-                }
-            }
-            // Do NOT auto-append generic location fields
+        if (hasPlaceholdersRecursive(baseBody)) {
+            // Dynamic Mode: Recursively replace placeholders.
+            @Suppress("UNCHECKED_CAST")
+            return replacePlaceholdersRecursive(baseBody, locationData) as Map<String, Any>
         } else {
-            // Legacy Mode: Append generic location fields
-            finalBody.putAll(baseBody)
-            finalBody.putAll(locationData)
+            // Legacy Mode: Append generic location fields.
+            return mutableMapOf<String, Any>().apply {
+                putAll(baseBody)
+                putAll(locationData)
+            }
         }
-        return finalBody
     }
 
     private fun transmitLocation(locationData: Map<String, Any>) {
