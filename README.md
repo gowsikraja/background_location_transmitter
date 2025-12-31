@@ -112,7 +112,7 @@ LocationApiConfig(
       'accuracy_m': '%accuracy%'
     }
   },
-)
+);
 // Result Payload: {"driverId": "...", "coordinates": {"lat": "...", "lng": "..."}, ...}
 ```
 

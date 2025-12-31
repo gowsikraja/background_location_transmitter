@@ -112,7 +112,7 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
         'metadata': {
           'speed': '%speed%',
           'accuracy': '%accuracy%',
-          'timestamp': '%timestamp%'
+          'timestamp': '%timestamp%',
         },
       },
       method: HttpMethod.post,

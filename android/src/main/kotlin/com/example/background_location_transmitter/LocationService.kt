@@ -194,13 +194,9 @@ class LocationService : Service() {
     }
 
     private fun replacePlaceholders(template: String, data: Map<String, Any>): String {
-        var result = template
-        result = result.replace("%latitude%", data["latitude"].toString())
-        result = result.replace("%longitude%", data["longitude"].toString())
-        result = result.replace("%speed%", data["speed"].toString())
-        result = result.replace("%accuracy%", data["accuracy"].toString())
-        result = result.replace("%timestamp%", data["timestamp"].toString())
-        return result
+        return data.entries.fold(template) { acc, entry ->
+            acc.replace("%${entry.key}%", entry.value.toString())
+        }
     }
 
     private val PLACEHOLDERS = listOf("%latitude%", "%longitude%", "%speed%", "%accuracy%", "%timestamp%")
