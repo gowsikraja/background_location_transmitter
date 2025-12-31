@@ -215,7 +215,7 @@ class LocationService : Service() {
     private fun replacePlaceholdersRecursive(data: Any?, locationData: Map<String, Any>): Any? {
         return when (data) {
             is String -> replacePlaceholders(data, locationData)
-            is Map<*, *> -> data.mapKeys { it.key.toString() }.mapValues { replacePlaceholdersRecursive(it.value, locationData) }
+            is Map<*, *> -> data.entries.associate { (key, value) -> key.toString() to replacePlaceholdersRecursive(value, locationData) }
             is List<*> -> data.map { replacePlaceholdersRecursive(it, locationData) }
             else -> data
         }
