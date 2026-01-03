@@ -71,47 +71,20 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
     });
   }
 
-  /// Handles starting background tracking.
+  /// Start tracking with robust permission handling
   Future<void> _startTracking() async {
     setState(() => _loading = true);
-    var status = await Permission.locationAlways.status;
-    if (!status.isGranted) {
-      // 2a. Request "When In Use" first (Best practice for Android 10+)
-      var whenInUseStatus = await Permission.locationWhenInUse.request();
 
-      if (whenInUseStatus.isGranted) {
-        // 2b. If "When In Use" is granted, now ask for "Always"
-        var alwaysStatus = await Permission.locationAlways.request();
-
-        if (!alwaysStatus.isGranted) {
-          // User selected "Only this time" or "While using app" but denied "Always"
-          // Depending on strictness, you might return denied, or allow foreground-only.
-          // For this requirement ("work when closed"), we treat this as a failure.
-          if (alwaysStatus.isPermanentlyDenied) {
-            _showMessage('Location permission not granted');
-            setState(() => _loading = false);
-            return;
-          }
-          _showMessage('Location permission not granted');
-          setState(() => _loading = false);
-          return;
-        }
-      } else {
-        // User denied even basic access
-        if (whenInUseStatus.isPermanentlyDenied) {
-          _showMessage('Location permission not granted');
-          setState(() => _loading = false);
-          return;
-        }
-        _showMessage('Location permission not granted');
-        setState(() => _loading = false);
-        return;
-      }
+    final hasPermission = await _handleLocationPermission(always: true);
+    if (!hasPermission) {
+      setState(() => _loading = false);
+      return;
     }
 
+    // Double check with the plugin's internal check check if strictly required
     final permissionGranted = await _plugin.checkPermission();
     if (!permissionGranted) {
-      _showMessage('Location permission not granted');
+      _showMessage('Location permission not granted in plugin');
       setState(() => _loading = false);
       return;
     }
@@ -180,6 +153,12 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
 
   /// Fetches a one-time current location.
   Future<void> _getCurrentLocation() async {
+    // For single location fetch, "When In Use" is usually sufficient.
+    // However, if your use case implies background data later, stricter might be better.
+    // We'll stick to 'always: false' as minimal requirement for a simple fetch.
+    final hasPermission = await _handleLocationPermission(always: false);
+    if (!hasPermission) return;
+
     final location = await _plugin.getCurrentLocation();
 
     if (location == null) {
@@ -192,10 +171,117 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
     });
   }
 
+  /// Prompts the user for location permission.
+  ///
+  /// [always] - If true, requests `Permission.locationAlways`.
+  ///            If false, validates at least `Permission.locationWhenInUse`.
+  Future<bool> _handleLocationPermission({bool always = false}) async {
+    // 1. Check if location services are enabled
+    bool serviceEnabled = await _plugin.isLocationEnabled();
+    if (!serviceEnabled) {
+      if (!mounted) return false;
+      await _showDialog(
+        title: 'Location Services Disabled',
+        content: 'Please enable location services to continue.',
+        actionText: 'OK',
+        onAction: () async {
+          // You might try opening location settings here if supported
+          // await openLocationSettings(); (not in permission_handler, mostly specific)
+          // For simplicity, we just acknowledge.
+          // Note: permission_handler does NOT open "Location Service" toggle screen easily on all OS.
+          // AppSettings package is often used for this. For now, we guide user.
+        },
+      );
+      return false;
+    }
+
+    // 2. Request When In Use first
+    PermissionStatus statusWhenInUse =
+        await Permission.locationWhenInUse.status;
+    if (!statusWhenInUse.isGranted) {
+      statusWhenInUse = await Permission.locationWhenInUse.request();
+    }
+
+    if (statusWhenInUse.isPermanentlyDenied) {
+      if (!mounted) return false;
+      await _showDialog(
+        title: 'Location Permission Needed',
+        content:
+            'This app requires location permission to function. Please enable it in app settings.',
+        actionText: 'Open Settings',
+        onAction: () => openAppSettings(),
+      );
+      return false;
+    }
+
+    if (!statusWhenInUse.isGranted) {
+      // User denied the permission
+      return false;
+    }
+
+    // 3. If "Always" is required, request it now
+    if (always) {
+      PermissionStatus statusAlways = await Permission.locationAlways.status;
+      if (!statusAlways.isGranted) {
+        statusAlways = await Permission.locationAlways.request();
+      }
+
+      if (statusAlways.isPermanentlyDenied) {
+        if (!mounted) return false;
+        await _showDialog(
+          title: 'Background Location Needed',
+          content:
+              'For background tracking, please select "Allow all the time" in settings.',
+          actionText: 'Open Settings',
+          onAction: () => openAppSettings(),
+        );
+        return false;
+      }
+
+      if (!statusAlways.isGranted) {
+        // User likely selected "Only while using the app"
+        _showMessage('Background location permission denied.');
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   void _showMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _showDialog({
+    required String title,
+    required String content,
+    String? actionText,
+    VoidCallback? onAction,
+  }) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          if (actionText != null)
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onAction?.call();
+              },
+              child: Text(actionText),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
