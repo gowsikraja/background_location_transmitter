@@ -18,14 +18,52 @@ class LocationUploader {
       request.addValue($0.value, forHTTPHeaderField: $0.key)
     }
 
+    var bodyLog = "null"
     if let body = TrackingConfig.body,
        TrackingConfig.method != .get {
 
       let replacedBody = replaceBody(body, placeholders)
-      request.httpBody = try? JSONSerialization.data(withJSONObject: replacedBody)
+      if let jsonData = try? JSONSerialization.data(withJSONObject: replacedBody) {
+          request.httpBody = jsonData
+          bodyLog = String(data: jsonData, encoding: .utf8) ?? "binary"
+      }
     }
 
-    URLSession.shared.dataTask(with: request).resume()
+    PluginLogger.logAction("""
+    ⚡ Transmitting Location Request:
+    URL: \(urlString)
+    Method: \(request.httpMethod ?? "UNKNOWN")
+    Headers: \(TrackingConfig.headers ?? [:])
+    Body: \(bodyLog)
+    """)
+
+    URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            PluginLogger.logError("❌ Transmission failed: \(error.localizedDescription)")
+            return
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+             PluginLogger.logError("❌ Transmission failed: Invalid response")
+             return
+        }
+
+        let responseBody = String(data: data ?? Data(), encoding: .utf8) ?? ""
+
+        if (200...299).contains(httpResponse.statusCode) {
+            PluginLogger.logAction("""
+            ✅ Server Response:
+            Code: \(httpResponse.statusCode)
+            Body: \(responseBody)
+            """)
+        } else {
+             PluginLogger.logError("""
+            ⚠️ Server Error:
+            Code: \(httpResponse.statusCode)
+            Body: \(responseBody)
+            """)
+        }
+    }.resume()
   }
 
   private static func replace(_ template: String,
