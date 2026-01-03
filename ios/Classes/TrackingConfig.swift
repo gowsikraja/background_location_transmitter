@@ -11,6 +11,7 @@ struct TrackingConfig {
   static var body: [String: Any]?
   static var method: HttpMethod = .post
   static var debug: Bool = true
+  static var interval: TimeInterval = 10.0 // Seconds
 
   static func configure(from map: [String: Any]) {
     apiUrl = map["url"] as? String
@@ -26,6 +27,12 @@ struct TrackingConfig {
     } else {
         debug = true
     }
+
+    if let intervalMs = map["interval"] as? Double {
+        interval = intervalMs / 1000.0
+    } else {
+        interval = 10.0
+    }
   }
 
   static func clear() {
@@ -34,5 +41,6 @@ struct TrackingConfig {
     body = nil
     method = .post
     debug = true
+    interval = 10.0
   }
 }

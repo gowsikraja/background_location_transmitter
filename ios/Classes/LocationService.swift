@@ -61,10 +61,21 @@ class LocationService: NSObject, CLLocationManagerDelegate {
 
   // MARK: - CLLocationManagerDelegate
 
+  private var lastUploadTime: Date?
+
   func locationManager(_ manager: CLLocationManager,
                        didUpdateLocations locations: [CLLocation]) {
 
     guard let location = locations.last else { return }
+
+    // Throttling Check
+    let now = Date()
+    if let lastTime = lastUploadTime,
+       now.timeIntervalSince(lastTime) < TrackingConfig.interval {
+       // Too soon, skip
+       return
+    }
+    lastUploadTime = now
 
     let data = LocationMapper.map(location)
 
