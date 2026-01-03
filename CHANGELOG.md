@@ -1,3 +1,9 @@
+## [0.1.0] - 2026-01-03
+
+### Added
+- **iOS Support**: Added full support for iOS background location tracking.
+- Native Swift implementation.
+
 ## [0.0.2] - 2026-01-01
 
 ### Added
