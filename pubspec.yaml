@@ -26,3 +26,5 @@ flutter:
       android:
         package: com.example.background_location_transmitter
         pluginClass: BackgroundLocationTransmitterPlugin
+      ios:
+        pluginClass: BackgroundLocationTransmitterPlugin
