@@ -1,5 +1,6 @@
 import 'package:background_location_transmitter/background_location_transmitter.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(const ExampleApp());
@@ -73,6 +74,40 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
   /// Handles starting background tracking.
   Future<void> _startTracking() async {
     setState(() => _loading = true);
+    var status = await Permission.locationAlways.status;
+    if (!status.isGranted) {
+      // 2a. Request "When In Use" first (Best practice for Android 10+)
+      var whenInUseStatus = await Permission.locationWhenInUse.request();
+
+      if (whenInUseStatus.isGranted) {
+        // 2b. If "When In Use" is granted, now ask for "Always"
+        var alwaysStatus = await Permission.locationAlways.request();
+
+        if (!alwaysStatus.isGranted) {
+          // User selected "Only this time" or "While using app" but denied "Always"
+          // Depending on strictness, you might return denied, or allow foreground-only.
+          // For this requirement ("work when closed"), we treat this as a failure.
+          if (alwaysStatus.isPermanentlyDenied) {
+            _showMessage('Location permission not granted');
+            setState(() => _loading = false);
+            return;
+          }
+          _showMessage('Location permission not granted');
+          setState(() => _loading = false);
+          return;
+        }
+      } else {
+        // User denied even basic access
+        if (whenInUseStatus.isPermanentlyDenied) {
+          _showMessage('Location permission not granted');
+          setState(() => _loading = false);
+          return;
+        }
+        _showMessage('Location permission not granted');
+        setState(() => _loading = false);
+        return;
+      }
+    }
 
     final permissionGranted = await _plugin.checkPermission();
     if (!permissionGranted) {

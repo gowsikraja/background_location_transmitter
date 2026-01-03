@@ -54,6 +54,8 @@
 
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>This app requires location access.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Needed to access location</string>
 
     <key>UIBackgroundModes</key>
     <array>
