@@ -76,18 +76,25 @@ class LocationUploader {
   private static func replaceBody(_ body: [String: Any],
                                   _ values: [String: String]) -> [String: Any] {
     var result = [String: Any]()
-
     body.forEach { key, value in
-      if let str = value as? String {
-        var replaced = str
-        values.forEach {
-          replaced = replaced.replacingOccurrences(of: $0.key, with: $0.value)
-        }
-        result[key] = replaced
-      } else {
-        result[key] = value
-      }
+      result[key] = processValue(value, values)
     }
     return result
+  }
+
+  private static func processValue(_ value: Any,
+                                   _ values: [String: String]) -> Any {
+    if let str = value as? String {
+      return replace(str, values)
+    } else if let dict = value as? [String: Any] {
+      var newDict = [String: Any]()
+      dict.forEach { key, val in
+        newDict[key] = processValue(val, values)
+      }
+      return newDict
+    } else if let array = value as? [Any] {
+      return array.map { processValue($0, values) }
+    }
+    return value
   }
 }
