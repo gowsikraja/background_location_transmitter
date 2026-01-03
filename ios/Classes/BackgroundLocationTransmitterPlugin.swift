@@ -40,30 +40,43 @@ public class BackgroundLocationTransmitterPlugin: NSObject,
     switch call.method {
 
     case "checkPermission":
-      result(LocationService.shared.hasPermission)
+      PluginLogger.logPermission("Checking location permissions...")
+      let hasPermission = LocationService.shared.hasPermission
+      PluginLogger.logPermission("Permission granted: \(hasPermission)")
+      result(hasPermission)
 
     case "isLocationEnabled":
-      result(LocationService.shared.isLocationEnabled)
+      PluginLogger.logAction("Checking if location services are enabled...")
+      let enabled = LocationService.shared.isLocationEnabled
+      PluginLogger.logAction("Location services enabled: \(enabled)")
+      result(enabled)
 
     case "startTracking":
+      PluginLogger.logService("Request to start tracking received")
       guard let args = call.arguments as? [String: Any] else {
         result(FlutterError(code: "INVALID_ARGS", message: nil, details: nil))
         return
       }
 
       TrackingConfig.configure(from: args)
+      PluginLogger.logService("Starting LocationService")
       LocationService.shared.start()
       result(nil)
 
     case "stopTracking":
+      PluginLogger.logService("Request to stop tracking received")
       LocationService.shared.stop()
       TrackingConfig.clear()
+      PluginLogger.logService("LocationService stopped")
       result(nil)
 
     case "isTrackingRunning":
-      result(LocationService.shared.isRunning)
+      let running = LocationService.shared.isRunning
+      PluginLogger.logService("Checking if tracking is running: \(running)")
+      result(running)
 
     case "getCurrentLocation":
+      PluginLogger.logAction("Requesting one-time location update...")
       LocationService.shared.getCurrentLocation { data in
         result(data)
       }
@@ -76,11 +89,13 @@ public class BackgroundLocationTransmitterPlugin: NSObject,
 
   public func onListen(withArguments arguments: Any?,
                        eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    PluginLogger.logAction("Flutter execution listening for location updates")
     eventSink = events
     return nil
   }
 
   public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    PluginLogger.logAction("Flutter execution stopped listening")
     eventSink = nil
     return nil
   }
