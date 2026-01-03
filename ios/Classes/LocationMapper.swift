@@ -8,7 +8,7 @@ struct LocationMapper {
       "longitude": location.coordinate.longitude,
       "speed": location.speed,
       "accuracy": location.horizontalAccuracy,
-      "timestamp": Int(Date().timeIntervalSince1970 * 1000)
+      "timestamp": Int(location.timestamp.timeIntervalSince1970 * 1000)
     ]
   }
 
@@ -18,7 +18,7 @@ struct LocationMapper {
       "%longitude%": "\(location.coordinate.longitude)",
       "%speed%": "\(location.speed)",
       "%accuracy%": "\(location.horizontalAccuracy)",
-      "%timestamp%": "\(Int(Date().timeIntervalSince1970 * 1000))"
+      "%timestamp%": "\(Int(location.timestamp.timeIntervalSince1970 * 1000))"
     ]
   }
 }
