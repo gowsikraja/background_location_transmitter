@@ -8,8 +8,8 @@ This plugin is designed for applications that need to:
 - Transmit location data to a backend API
 - Receive live location updates in Flutter when the app is active
 
-> ⚠️ **Android only (for now)**  
-> iOS support is planned for a future release.
+> ⚠️ **Note**
+> This plugin uses native background services to ensure reliability even when the app is closed.
 
 ---
 
@@ -42,6 +42,7 @@ This plugin intentionally delegates background location tracking to native platf
 - ✅ Live location stream to Flutter
 - ✅ One-time current location fetch
 - ✅ Android 14+ compliant
+- ✅ iOS Background Location support
 - ❌ No UI or permission dialogs (handled by the app)
 
 ---
@@ -154,20 +155,46 @@ Recommended approach in Flutter:
 - Request locationAlways permission
 - Start tracking only after permission is granted
 
+### 2️⃣ iOS Setup
+1. **Info.plist**: Add the following keys for permission usage:
+   ```xml
+   <key>NSLocationWhenInUseUsageDescription</key>
+   <string>We need your location to track your journey.</string>
+   <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+   <string>We need your location to track your journey even when the app is closed.</string>
+   <key>NSLocationAlwaysUsageDescription</key>
+   <string>We need your location to track your journey in the background.</string>
+   <key>UIBackgroundModes</key>
+   <array>
+       <string>location</string>
+   </array>
+   ```
+
+2. **Capabilities**:
+   - Open your project in Xcode.
+   - Go to **Signing & Capabilities**.
+   - Add **Background Modes**.
+   - Check **Location updates**.
+
 ---
 
 ## ⚠️ Limitations
 
+### Android
 - ❌ Cannot survive force-stop by the user
 - ❌ Background execution depends on OEM battery policies
-- ❌ Android only (iOS planned)
 
-These are Android platform limitations, not plugin bugs.
+### iOS (Expected Behavior)
+- ❌ Cannot survive force-kill
+- ❌ Cannot guarantee update frequency
+- ❌ No persistent notification
+- ✅ Background location only works with **Always** permission
+
+These are platform-enforced limitations, not plugin issues.
 
 ---
 
 ## 🗺️ Roadmap
-- iOS support
 - Offline queue & retry
 - Encrypted payload support
 - Custom transmission strategies
