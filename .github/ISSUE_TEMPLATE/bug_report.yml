@@ -18,14 +18,15 @@ body:
     validations:
       required: true
 
-  - type: dropdown
+  - type: checkboxes
     id: platform
     attributes:
-      label: Platform
+      label: Affected platform(s)
+      description: "Select all platforms where you've observed the bug."
       options:
-        - Android
-        - iOS
-        - Flutter (Dart)
+        - label: Flutter (Dart)
+        - label: Android
+        - label: iOS
     validations:
       required: true
 
@@ -48,6 +49,21 @@ body:
         3. Observe behavior
     validations:
       required: true
+  
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment details
+      description: |
+        - OS version: (e.g., Android 12, iOS 15.5)
+        - Device: (e.g., Pixel 6, iPhone 13)
+        - Flutter version: (run `flutter --version`)
+      placeholder: |
+        - OS version: 
+        - Device: 
+        - Flutter version: 
+    validations:
+      required: false
 
   - type: textarea
     id: logs

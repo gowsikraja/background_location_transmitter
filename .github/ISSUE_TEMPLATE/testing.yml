@@ -36,3 +36,5 @@ body:
     attributes:
       label: Proposed approach
       description: How should this be tested?
+    validations:
+      required: true
