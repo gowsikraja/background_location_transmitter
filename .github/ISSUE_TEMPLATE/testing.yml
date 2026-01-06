@@ -1,0 +1,38 @@
+name: 🧪 Testing / Quality Improvement
+description: Propose improvements to testing, CI, or quality checks
+title: "[Testing]: "
+labels: ["testing", "roadmap"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for test coverage, CI improvements, or quality enhancements.
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope of testing
+      description: Which area needs testing?
+      placeholder: |
+        - Plugin core
+        - Android native
+        - iOS native
+        - Example app
+    validations:
+      required: true
+
+  - type: textarea
+    id: gaps
+    attributes:
+      label: Current gaps
+      description: What is currently missing or untested?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: How should this be tested?

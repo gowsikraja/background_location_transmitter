@@ -1,0 +1,43 @@
+name: ✨ Enhancement / Feature Request
+description: Suggest an improvement or new feature
+title: "[Enhancement]: "
+labels: ["enhancement", "roadmap"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to suggest enhancements or new features.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe your proposed solution or enhancement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any alternative solutions you considered.
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform impact
+      options:
+        - Android
+        - iOS
+        - Flutter
+        - All platforms

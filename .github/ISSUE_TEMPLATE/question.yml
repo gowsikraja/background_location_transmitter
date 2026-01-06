@@ -1,0 +1,19 @@
+name: ❓ Question / Discussion
+description: Ask a question or start a discussion
+title: "[Question]: "
+labels: ["question"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for questions, clarifications, or discussions.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Ask your question clearly and concisely.
+    validations:
+      required: true
