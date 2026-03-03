@@ -19,7 +19,7 @@ class LocationService: NSObject, CLLocationManagerDelegate {
         status = CLLocationManager.authorizationStatus()
       }
 
-      return status == .authorizedAlways
+      return status == .authorizedAlways || status == .authorizedWhenInUse
     }
 
 
