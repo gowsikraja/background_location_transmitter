@@ -81,6 +81,20 @@ public class BackgroundLocationTransmitterPlugin: NSObject,
         result(data)
       }
 
+    case "openLocationSettings":
+      PluginLogger.logAction("Opening location settings")
+      if let url = URL(string: UIApplication.openSettingsURLString) {
+          if UIApplication.shared.canOpenURL(url) {
+              UIApplication.shared.open(url, options: [:]) { success in
+                  result(success)
+              }
+          } else {
+              result(false)
+          }
+      } else {
+          result(false)
+      }
+
     default:
       result(FlutterMethodNotImplemented)
     }

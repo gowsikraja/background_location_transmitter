@@ -84,4 +84,8 @@ class MethodChannelImpl {
     );
     return result == null ? null : LocationData.fromMap(result);
   }
+
+  /// Opens the device's location settings screen.
+  Future<bool> openLocationSettings() async =>
+      await _methodChannel.invokeMethod<bool>('openLocationSettings') ?? false;
 }

@@ -183,13 +183,9 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
       await _showDialog(
         title: 'Location Services Disabled',
         content: 'Please enable location services to continue.',
-        actionText: 'OK',
+        actionText: 'Open Settings',
         onAction: () async {
-          // You might try opening location settings here if supported
-          // await openLocationSettings(); (not in permission_handler, mostly specific)
-          // For simplicity, we just acknowledge.
-          // Note: permission_handler does NOT open "Location Service" toggle screen easily on all OS.
-          // AppSettings package is often used for this. For now, we guide user.
+          await _plugin.openLocationSettings();
         },
       );
       return false;

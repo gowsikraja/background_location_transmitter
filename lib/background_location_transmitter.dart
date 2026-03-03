@@ -84,4 +84,10 @@ class BackgroundLocationTransmitter {
   /// This does not start background tracking and does not affect
   /// the running tracking service, if any.
   Future<LocationData?> getCurrentLocation() => _platform.getCurrentLocation();
+
+  /// Opens the device's location settings screen.
+  ///
+  /// Returns `true` if the settings screen was successfully opened,
+  /// `false` otherwise.
+  Future<bool> openLocationSettings() => _platform.openLocationSettings();
 }

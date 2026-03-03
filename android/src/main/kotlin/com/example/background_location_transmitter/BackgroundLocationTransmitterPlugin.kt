@@ -132,6 +132,19 @@ class BackgroundLocationTransmitterPlugin :
                 LocationUtils.getCurrentLocation(context, result)
             }
 
+            "openLocationSettings" -> {
+                PluginLogger.logAction("Opening location settings")
+                try {
+                    val intent = Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    result.success(true)
+                } catch (e: Exception) {
+                    PluginLogger.logError("Failed to open location settings: ${e.message}")
+                    result.success(false)
+                }
+            }
+
             else -> result.notImplemented()
         }
     }
