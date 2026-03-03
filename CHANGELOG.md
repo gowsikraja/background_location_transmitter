@@ -1,3 +1,11 @@
+## [0.1.1] - 2026-03-03
+
+### Added
+- **Location Settings**: Added `openLocationSetting()` feature to easily direct users to device location settings.
+
+### Fixed
+- Fixed iOS `getCurrentLocation` fetch issue.
+
 ## [0.1.0] - 2026-01-03
 
 ### Added

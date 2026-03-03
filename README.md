@@ -41,6 +41,7 @@ This plugin intentionally delegates background location tracking to native platf
 - ✅ Server-side transmission with configurable API
 - ✅ Live location stream to Flutter
 - ✅ One-time current location fetch
+- ✅ Open device location settings directly
 - ✅ Android 14+ compliant
 - ✅ iOS Background Location support
 - ❌ No UI or permission dialogs (handled by the app)
